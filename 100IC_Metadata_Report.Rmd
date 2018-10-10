@@ -1,0 +1,89 @@
+---
+title: "100 Island Challenge Metadata Reporting"
+author: "L_Bonito"
+date: "October 10, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Overview
+
+This report is generated from the "Master Metadata" workbook that is saved on the Sandin Lab server and houses all metadata related to the 100 Island Challenge. No formatting is done before importing a flat .csv version to RMarkdown.
+
+```{r include=FALSE}
+### load library
+library(htmlTable)
+
+### Import data and clean:
+data = read.csv("Master_Metadata_20181010_test.csv")
+data[data == "yes"] <- "YES"
+data[data == "no"] <- "NO"
+
+data <- droplevels(data) # remove unused levels for table fxn
+
+data$ID <- do.call(paste, c(data[c("Island", "Year", "Month")], sep="_")) # add unique Island-Year ID
+
+### create table to summarize fish data
+fish.collect = as.data.frame(table(data[,c("ID", "Fish..yes.no.")]))
+fish.collect = fish.collect[which(fish.collect$Fish..yes.no.=="YES"),]
+fish.collect = fish.collect[c(1,3)]
+colnames(fish.collect) <- c("Island-Year", "Fish_Collected")
+
+fish.enter = as.data.frame(table(data[,c("ID", "Fish.Entered..Y.N.")]))
+fish.enter = fish.enter[which(fish.enter$Fish.Entered..Y.N.=="Y"),]
+fish.enter = fish.enter[c(1,3)]
+colnames(fish.enter) <- c("Island-Year", "Fish_Entered")
+
+fish.data = as.data.frame(table(data[,c("ID", "Fish.Database..Y.N.")]))
+fish.data = fish.data[which(fish.data$Fish.Database..Y.N.=="Y"),]
+fish.data = fish.data[c(1,3)]
+colnames(fish.data) <- c("Island-Year", "Fish_Database")
+
+# combine data tables into one for fish:
+fish = cbind(fish.collect, fish.enter[,2], fish.data[,2])
+colnames(fish) <- c("Island_Year", "Collected", "Entered", "Database")
+
+
+### create table to summarize PQ data
+pq.collect = as.data.frame(table(data[,c("ID", "PQ..yes.no.")]))
+pq.collect = pq.collect[which(pq.collect$PQ..yes.no.=="YES"),]
+pq.collect = pq.collect[c(1,3)]
+colnames(pq.collect) <- c("Island-Year", "PQ_Collected")
+
+pq.images = as.data.frame(table(data[,c("ID", "PQ.Images..Y.N.")]))
+pq.images = pq.images[which(pq.images$PQ.Images..Y.N.=="Y"),]
+pq.images = pq.images[c(1,3)]
+colnames(pq.images) <- c("Island-Year", "PQ_Images")
+
+pq.proc = as.data.frame(table(data[,c("ID", "PQ.Proc..Y.N.")]))
+pq.proc = pq.proc[which(pq.proc$PQ.Proc..Y.N.=="Y"),]
+pq.proc = pq.proc[c(1,3)]
+colnames(pq.proc) <- c("Island-Year", "PQ_Processed")
+
+# combine data tables into one for PQs:
+pq = cbind(pq.collect, pq.images[,2], pq.proc[,2])
+colnames(pq) <- c("Island_Year", "Collected", "Images", "Processed")
+
+
+##### Combine all data summaries into one:
+meta_all = cbind(fish, pq[,2:4])
+row.names(meta_all) <- NULL # remove numerical row.names for table formatting
+
+meta_all_matrix = as.matrix(meta_all) # convert to matrix for better table formatting
+
+
+ 
+```
+
+## Summary of Data Collection and Processing
+
+<< This is only fish and PQ data for now >>
+
+```{r pressure, echo=FALSE}
+htmlTable(meta_all_matrix, 
+          cgroup = c("", "Fish", "PQ"),
+          n.cgroup = c(1,3,3))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
